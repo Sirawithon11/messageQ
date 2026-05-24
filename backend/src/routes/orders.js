@@ -1,15 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const orderService = require('../services/orderService');
-
-const handle = (fn) => async (req, res) => {
-  try {
-    const result = await fn(req);
-    res.status(result.status ?? 200).json(result.body);
-  } catch (err) {
-    res.status(err.statusCode ?? 500).json({ error: err.message });
-  }
-};
+const handle = require('../utils/handler');
 
 router.get('/', handle(async () => ({
   body: await orderService.getAllOrders(),

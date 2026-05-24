@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { io } from 'socket.io-client';
 import ProductCard from '../components/ProductCard';
 import { getProducts, createOrder } from '../lib/api';
+import { useStockSocket } from '../hooks/useStockSocket';
 
 export default function ShopPage() {
   const [products, setProducts] = useState([]);
@@ -28,20 +28,14 @@ export default function ShopPage() {
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
-  useEffect(() => {
-    const socket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000');
-
-    socket.on('stock:update', (updates) => {
-      setProducts((prev) =>
-        prev.map((p) => {
-          const update = updates.find((u) => u.id === p.id);
-          return update ? { ...p, stock: update.stock } : p;
-        })
-      );
-    });
-
-    return () => { socket.disconnect(); };
-  }, []);
+  useStockSocket(useCallback((updates) => {
+    setProducts((prev) =>
+      prev.map((p) => {
+        const update = updates.find((u) => u.id === p.id);
+        return update ? { ...p, stock: update.stock } : p;
+      })
+    );
+  }, []));
 
   const handleAddToCart = (product, qty) => {
     setCart((prev) => {
