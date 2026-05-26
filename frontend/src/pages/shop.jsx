@@ -13,6 +13,7 @@ export default function ShopPage() {
   const [ordering, setOrdering] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(null);
   const [orderError, setOrderError] = useState('');
+  const [outOfStockAlert, setOutOfStockAlert] = useState([]);
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -28,14 +29,25 @@ export default function ShopPage() {
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
-  useStockSocket(useCallback((updates) => {
-    setProducts((prev) =>
-      prev.map((p) => {
-        const update = updates.find((u) => u.id === p.id);
-        return update ? { ...p, stock: update.stock } : p;
-      })
-    );
-  }, []));
+  useStockSocket(
+    useCallback((updates) => {
+      setProducts((prev) =>
+        prev.map((p) => {
+          const update = updates.find((u) => u.id === p.id);
+          return update ? { ...p, stock: update.stock } : p;
+        })
+      );
+    }, []),
+    useCallback((emptyIds) => {
+      setCart((prev) => {
+        const affected = prev.filter((i) => emptyIds.includes(i.product.id));
+        if (affected.length > 0) {
+          setOutOfStockAlert(affected.map((i) => i.product.name));
+        }
+        return prev;
+      });
+    }, [])
+  );
 
   const handleAddToCart = (product, qty) => {
     setCart((prev) => {
@@ -118,6 +130,16 @@ export default function ShopPage() {
           >
             Dismiss
           </button>
+        </div>
+      )}
+
+      {outOfStockAlert.length > 0 && (
+        <div className="mb-4 px-4 py-3 bg-orange-50 border border-orange-200 rounded-xl flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold text-orange-800">Item{outOfStockAlert.length > 1 ? 's' : ''} in your cart just ran out of stock</p>
+            <p className="text-xs text-orange-700 mt-0.5">{outOfStockAlert.join(', ')}</p>
+          </div>
+          <button onClick={() => setOutOfStockAlert([])} className="text-orange-400 hover:text-orange-600 text-lg leading-none shrink-0">&times;</button>
         </div>
       )}
 

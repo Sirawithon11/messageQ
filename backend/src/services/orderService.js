@@ -69,6 +69,11 @@ async function createOrder({ customer_name, customer_email, items }) {
 
     getIO().emit('stock:update', stockUpdates);
 
+    const emptyProductIds = stockUpdates.filter((u) => u.stock === 0).map((u) => u.id);
+    if (emptyProductIds.length > 0) {
+      getIO().emit('stock:empty', emptyProductIds);
+    }
+
     return {
       ...order,
       items: enrichedItems.map((i) => ({
